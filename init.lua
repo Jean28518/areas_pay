@@ -33,6 +33,9 @@ if (timer > UPDATE_TIME) then
       for k, v in pairs(BLOCKS_TO_REMOVE) do
         worldedit.replace(areas.areas[id].pos1, areas.areas[id].pos2, v, "air")
       end
+    else
+      areas_pay_remove_recursive_areas(rents[id].owner, rents[id].rentID)
+      rents[id].rentID = areas_pay_add_owner(rents[id].owner, id.." "..rents[id].customer.." Rented Area")
     end
   end
   storage:set_string("rents", minetest.serialize(rents))
@@ -56,7 +59,6 @@ minetest.register_craft({
 		{"", "", ""}
 	}
 })
-
 
 minetest.register_node("areas_pay:shop_block", {
 
@@ -264,9 +266,10 @@ minetest.register_on_player_receive_fields(function(customer, formname, fields)
 	if formname == "areas_pay_customer" and fields.buy_button ~= nil and fields.buy_button ~= "" then
 		local pos = default.areas_pay_pos[customer:get_player_name()]
 		local meta = minetest.get_meta(pos)
-    if id == 0 then
-      mintest.chat_send_player(customer, "Shop unconfigured")
+    if meta:get_int("areas_pay:area_id") == 0 then
+      minetest.chat_send_player(customer:get_player_name(), "Shop unconfigured")
       minetest.close_formspec(customer:get_player_name(), "areas_pay_customer")
+      return
     end
     -- Check if the customer has enough money, give him the area, and remove the block.
 	  if jeans_economy_book(customer:get_player_name(), meta:get_string("owner"), meta:get_int("areas_pay:price"), customer:get_player_name().." buys the Area with the ID " .. meta:get_string("areas_pay:area_id").." from " .. meta:get_string("owner")) then
@@ -289,8 +292,9 @@ minetest.register_on_player_receive_fields(function(customer, formname, fields)
     local rents = minetest.deserialize(storage:get_string("rents")) or {}
     local id = meta:get_int("areas_pay:area_id")
     if id == 0 then
-      mintest.chat_send_player(customer, "Shop unconfigured")
+      minetest.chat_send_player(customer:get_player_name(), "Shop unconfigured")
       minetest.close_formspec(customer:get_player_name(), "areas_pay_customer_rent")
+      return
     end
     --       If the area is rented, and the time after renting is lower then two full periods
     if rents == nil or rents[id] == nil or (rents[id] ~= nil and (rents[id].rented_to + meta:get_int("areas_pay:period") - minetest.get_gametime()) < (meta:get_int("areas_pay:period") * MAX_RENT_PERIODS)) then
@@ -303,7 +307,7 @@ minetest.register_on_player_receive_fields(function(customer, formname, fields)
         end
         minetest.chat_send_player(customer:get_player_name(), "Rented area successfully")
         areas_pay_select_area(owner, meta:get_string("areas_pay:area_id"))
-        local newID = areas_pay_add_owner(owner, meta:get_string("areas_pay:area_id").." "..customer:get_player_name().." Rended Area")
+        local newID = areas_pay_add_owner(owner, meta:get_string("areas_pay:area_id").." "..customer:get_player_name().." Rented Area")
         -- Figure out rented_to time
         local rented_to = 0
         if rents == nil or rents[id] == nil or rents[id].rented_to < minetest.get_gametime() then
