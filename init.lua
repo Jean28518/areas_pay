@@ -1,4 +1,4 @@
-local UPDATE_TIME = 60
+local UPDATE_TIME = 3600
 local BLOCKS_TO_REMOVE = {"default:chest", "default:chest_locked", "doors:door_steel_a", "doors:door_steel_b", "doors:trapdoor_steel", "doors:trapdoor_steel_open" }
 local MAX_RENT_PERIODS = 2 -- This is how long a customer can book the area in the future
 --------------------------------------------------------------------------------
@@ -35,6 +35,7 @@ if (timer > UPDATE_TIME) then
       end
     else
       areas_pay_remove_recursive_areas(rents[id].owner, rents[id].rentID)
+      areas_pay_select_area(rents[id].owner, id)
       rents[id].rentID = areas_pay_add_owner(rents[id].owner, id.." "..rents[id].customer.." Rented Area")
     end
   end
